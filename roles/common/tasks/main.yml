@@ -1,0 +1,29 @@
+- hosts: all
+  become: yes
+  tasks:
+   - name: install Podman
+     dnf:
+       name: podman
+       state: present
+       update_cache: true
+
+   - name: install Buildah
+     dnf:
+       name: buildah
+       state: present
+       update_cache: true
+
+   - name: install Podman docker compatibility package
+     dnf:
+       name: podman-docker
+       state: present
+       update_cache: true
+
+   - name: disable SELinux
+     command: setenforce 0
+     when: ansible_os_family == 'RedHat' and ansible_selinux.status == 'enabled'
+
+   - name: disable SELinux on reboot
+     selinux:
+       state: disabled
+
