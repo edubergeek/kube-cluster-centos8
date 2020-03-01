@@ -1,0 +1,79 @@
+- hosts: all
+  become: yes
+  tasks:
+   - name: add Kubernetes' YUM repository
+     yum_repository:
+      name: Kubernetes
+      description: Kubernetes YUM repository
+      baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+      gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+      gpgcheck: yes
+
+   - name: install kubelet
+     yum:
+        name: kubelet-1.14.0
+        state: present
+        update_cache: true
+
+   - name: install kubeadm
+     yum:
+        name: kubeadm-1.14.0
+        state: present
+
+   - name: start kubelet
+     service:
+       name: kubelet
+       enabled: yes
+       state: started
+
+   - name: open firewall for Kubernetes
+     firewalld:
+       port: 6443/tcp
+       permanent: true
+       immediate: yes
+       state: enabled
+
+   - name: open firewall for Kubernetes
+     firewalld:
+       port: 2379-2380/tcp
+       permanent: true
+       immediate: yes
+       state: enabled
+
+   - name: open firewall for Kubernetes
+     firewalld:
+       port: 10250-10252/tcp
+       permanent: true
+       immediate: yes
+       state: enabled
+
+   - name: open firewall for Kubernetes
+     firewalld:
+       port: 10255/tcp
+       permanent: true
+       immediate: yes
+       state: enabled
+
+   - name: install netfilter bridge
+     shell: modprobe br_netfilter && echo '1' > /proc/sys/net/bridge/bridge-nf-call-iptables
+     args:
+       creates: /proc/sys/net/bridge/bridge-nf-call-iptables
+
+   - name: Remove swapfile from /etc/fstab
+     mount:
+       name: swap
+       fstype: swap
+       state: absent
+
+   - name: Disable swap
+     command: swapoff -a
+     when: ansible_swaptotal_mb > 0
+
+- hosts: master
+  become: yes
+  tasks:
+   - name: install kubectl
+     yum:
+        name: kubectl-1.14.0
+        state: present
+        allow_downgrade: yes
